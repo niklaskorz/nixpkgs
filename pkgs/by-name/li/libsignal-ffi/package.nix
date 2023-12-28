@@ -4,8 +4,8 @@ let
   boringssl-wrapper = runCommand "boringssl-wrapper" { } ''
     mkdir $out
     cd $out
-    cp -r ${boringssl.out}/lib build
-    cp -r ${boringssl.dev}/include include
+    ln -s ${boringssl.out}/lib build
+    ln -s ${boringssl.dev}/include include
   '';
 in
 rustPlatform.buildRustPackage rec {
@@ -47,7 +47,7 @@ rustPlatform.buildRustPackage rec {
   '';
 
   meta = with lib; {
-    description = "libsignal-ffi is a C ABI library which exposes Signal protocol logic to languages which can consume a C ABI, such as Swift.";
+    description = "A C ABI library which exposes Signal protocol logic";
     homepage = "https://github.com/signalapp/libsignal";
     license = licenses.agpl3Plus;
     maintainers = with maintainers; [ niklaskorz ];
