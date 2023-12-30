@@ -33,18 +33,7 @@ rustPlatform.buildRustPackage rec {
     };
   };
 
-  buildPhase = ''
-    runHook preBuild
-    cargo build --release -p libsignal-ffi
-    runHook postBuild
-  '';
-
-  installPhase = ''
-    runHook preInstall
-    mkdir -p $out/lib
-    mv target/release/libsignal_ffi.a $out/lib/
-    runHook postInstall
-  '';
+  cargoBuildFlags = [ "-p" "libsignal-ffi" ];
 
   meta = with lib; {
     description = "A C ABI library which exposes Signal protocol logic";
