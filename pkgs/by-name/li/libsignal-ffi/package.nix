@@ -10,6 +10,8 @@ let
 in
 rustPlatform.buildRustPackage rec {
   pname = "libsignal-ffi";
+  # must match the version used in mautrix-signal
+  # see https://github.com/mautrix/signal/issues/401
   version = "0.36.1";
 
   src = fetchFromGitHub {
