@@ -2,6 +2,7 @@
   lib,
   rustPlatform,
   fetchFromGitHub,
+  fetchzip,
   copyDesktopItems,
   curl,
   perl,
@@ -21,6 +22,7 @@
   libglvnd,
   xorg,
   stdenv,
+  system,
   darwin,
   makeFontsConf,
   vulkan-loader,
@@ -38,9 +40,9 @@ rustPlatform.buildRustPackage rec {
   src = fetchFromGitHub {
     owner = "zed-industries";
     repo = "zed";
-    rev = "refs/tags/v${version}";
-    hash = "sha256-U1DL6TaE8LgyT8JsMRpKE3LDdo8hXr6RUVhYZoee8Qs=";
-    fetchSubmodules = true;
+    # WIP: https://github.com/zed-industries/zed/pull/13343
+    rev = "609b5ae8e429c9286f9a77465ecf5e156ab8fa49";
+    hash = "sha256-c3Z0r9AgE+1GYMAwVzZ2suTbyk/yKNc21L9M+z7PvAc=";
   };
 
   cargoLock = {
@@ -48,11 +50,14 @@ rustPlatform.buildRustPackage rec {
     outputHashes = {
       "alacritty_terminal-0.24.1-dev" = "sha256-aVB1CNOLjNh6AtvdbomODNrk00Md8yz8QzldzvDo1LI=";
       "async-pipe-0.1.3" = "sha256-g120X88HGT8P6GNCrzpS5SutALx5H+45Sf4iSSxzctE=";
-      "blade-graphics-0.4.0" = "sha256-khJke3tIO8V7tT3MBk9vQhBKTiJEWTY6Qr4vzeuKnOk=";
+      "blade-graphics-0.4.0" = "sha256-fvlHCN1EHbgg+aX7wHf10T+uEealIm9qRFLxgXjJbP8=";
+      "cosmic-text-0.11.2" = "sha256-TLPDnqixuW+aPAhiBhSvuZIa69vgV3xLcw32OlkdCcM=";
+      "cpal-0.15.3" = "sha256-t+jY+0gygP+4ZHbWc40o2i+A4tLXjwKYEwS6cPvujes=";
       "font-kit-0.11.0" = "sha256-+4zMzjFyMS60HfLMEXGfXqKn6P+pOngLA45udV09DM8=";
-      "lsp-types-0.95.1" = "sha256-ZWgQH7sUkP51oni2rqYX8Fsme/bGQV1TL5SbmEAhATU=";
+      "libwebrtc-0.3.4" = "sha256-2HC5mprs+ub60sRTD1xQIQzQpM5+oEJfspMKngkERNY=";
+      "lsp-types-0.95.1" = "sha256-N4MKoU9j1p/Xeowki/+XiNQPwIcTm9DgmfM/Eieq4js=";
       "nvim-rs-0.6.0-pre" = "sha256-bdWWuCsBv01mnPA5e5zRpq48BgOqaqIcAu+b7y1NnM8=";
-      "pathfinder_simd-0.5.3" = "sha256-bakBcAQZJdHQPXybe0zoMzE49aOHENQY7/ZWZUMt+pM=";
+      "pathfinder_simd-0.5.3" = "sha256-94/qS5d0UKYXAdx+Lswj6clOTuuK2yxqWuhpYZ8x1nI=";
       "tree-sitter-0.20.100" = "sha256-xZDWAjNIhWC2n39H7jJdKDgyE/J6+MAVSa8dHtZ6CLE=";
       "tree-sitter-go-0.20.0" = "sha256-/mE21JSa3LWEiOgYPJcq0FYzTbBuNwp9JdZTZqmDIUU=";
       "tree-sitter-gowork-0.0.1" = "sha256-lM4L4Ap/c8uCr4xUw9+l/vaGb3FxxnuZI0+xKYFDPVg=";
@@ -94,6 +99,7 @@ rustPlatform.buildRustPackage rec {
       with darwin.apple_sdk.frameworks;
       [
         AppKit
+        AVFoundation
         CoreAudio
         CoreFoundation
         CoreGraphics
@@ -103,13 +109,18 @@ rustPlatform.buildRustPackage rec {
         Foundation
         IOKit
         Metal
+        MetalKit
+        ScreenCaptureKit #
         Security
+        System
         SystemConfiguration
         VideoToolbox
       ]
     );
 
-  buildFeatures = [ "gpui/runtime_shaders" ];
+  # Required on darwin because we don't have access to the
+  # proprietary Metal shader compiler.
+  buildFeatures = lib.optionals stdenv.isDarwin [ "gpui/runtime_shaders" ];
 
   env = {
     ZSTD_SYS_USE_PKG_CONFIG = true;
@@ -120,6 +131,28 @@ rustPlatform.buildRustPackage rec {
       ];
     };
   };
+
+  LK_CUSTOM_WEBRTC =
+    let
+      # Must match WEBRTC_TAG in https://github.com/livekit/rust-sdks/blob/$VERSION/webrtc-sys/build/src/lib.rs
+      # where $VERSION is the resolved version of libwebrtc in our ./Cargo.lock
+      webrtc_tag = "webrtc-b951613-4";
+      webrtc_target = {
+        "aarch64-linux" = "linux-arm64";
+        "x86_64-linux" = "linux-x64";
+        "aarch64-darwin" = "mac-arm64";
+        "x86_64-darwin" = "mac-x64";
+      }.${system};
+    in
+    fetchzip {
+      url = "https://github.com/livekit/client-sdk-rust/releases/download/${webrtc_tag}/webrtc-${webrtc_target}-release.zip";
+      hash = {
+        "aarch64-linux" = "sha256-s2bXdOGaTcXN6KI7hMWbV1Q9joGrKSbcrhQlyvRvtVo=";
+        "x86_64-linux" = "sha256-F/e6eWvV3R7p0NlfijGBDMmfNpvk3qCcMM8Gf9d5YQ8=";
+        "aarch64-darwin" = "sha256-RO15n3TQs0b9tnRdbqF7GoQ9H5orN3IduNBnG+BF3H4=";
+        "x86_64-darwin" = "sha256-vLKfw5ZsxhjG+tsw3hUeep2Sb0HaqmajgPkioi5Oyow=";
+      }.${system};
+    };
 
   RUSTFLAGS = if withGLES then "--cfg gles" else "";
   gpu-lib = if withGLES then libglvnd else vulkan-loader;
@@ -158,8 +191,6 @@ rustPlatform.buildRustPackage rec {
       niklaskorz
     ];
     mainProgram = "zed";
-    platforms = platforms.all;
-    # Currently broken on darwin: https://github.com/NixOS/nixpkgs/pull/303233#issuecomment-2048650618
-    broken = stdenv.isDarwin;
+    platforms = platforms.linux ++ platforms.darwin;
   };
 }
