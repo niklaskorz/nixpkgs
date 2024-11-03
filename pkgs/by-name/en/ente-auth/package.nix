@@ -27,6 +27,8 @@ flutter324.buildFlutterApplication rec {
     hash = "sha256-me+fT79vwqBBNsRWWo58GdzBf58LNB4Mk+pmCLvn/ik=";
   };
 
+  targetFlutterPlatform = "macos";
+
   sourceRoot = "${src.name}/auth";
 
   pubspecLock = lib.importJSON ./pubspec.lock.json;
@@ -50,9 +52,9 @@ flutter324.buildFlutterApplication rec {
   ];
 
   buildInputs = [
-    webkitgtk_4_0
+    #webkitgtk_4_0
     sqlite
-    libayatana-appindicator
+    #libayatana-appindicator
   ];
 
   # Based on https://github.com/ente-io/ente/blob/main/auth/linux/packaging/rpm/make_config.yaml
@@ -100,9 +102,6 @@ flutter324.buildFlutterApplication rec {
       gepbird
     ];
     mainProgram = "ente_auth";
-    platforms = [
-      "x86_64-linux"
-      "aarch64-linux"
-    ];
+    platforms = lib.platforms.linux ++ lib.platforms.darwin;
   };
 }

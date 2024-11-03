@@ -10,6 +10,10 @@
 , pkg-config
 , jq
 , yq
+, apple-sdk_15
+, cocoapods
+, xcbuild
+, writeShellScriptBin
 }:
 
 # absolutely no mac support for now
@@ -59,7 +63,7 @@ let
 
         export HOME="$NIX_BUILD_TOP"
         flutter config $flutterFlags --no-analytics &>/dev/null # mute first-run
-        flutter config $flutterFlags --enable-linux-desktop >/dev/null
+        flutter config $flutterFlags --enable-macos-desktop >/dev/null
       '';
 
       pubGetScript = args.pubGetScript or "flutter${lib.optionalString hasEngine " --local-engine $flutterMode"} pub get";
@@ -144,6 +148,81 @@ let
         runHook preInstall
 
         built=build/linux/*/$flutterMode/bundle
+
+        mkdir -p $out/bin
+        mkdir -p $out/app
+        mv $built $out/app/$pname
+
+        for f in $(find $out/app/$pname -iname "*.desktop" -type f); do
+          install -D $f $out/share/applications/$(basename $f)
+        done
+
+        for f in $(find $out/app/$pname -maxdepth 1 -type f); do
+          ln -s $f $out/bin/$(basename $f)
+        done
+
+        # make *.so executable
+        find $out/app/$pname -iname "*.so" -type f -exec chmod +x {} +
+
+        # remove stuff like /build/source/packages/ubuntu_desktop_installer/linux/flutter/ephemeral
+        for f in $(find $out/app/$pname -executable -type f); do
+          if patchelf --print-rpath "$f" | grep /build; then # this ignores static libs (e,g. libapp.so) also
+            echo "strip RPath of $f"
+            newrp=$(patchelf --print-rpath $f | sed -r "s|/build.*ephemeral:||g" | sed -r "s|/build.*profile:||g")
+            patchelf --set-rpath "$newrp" "$f"
+          fi
+        done
+
+        runHook postInstall
+      '';
+
+      dontWrapGApps = true;
+      extraWrapProgramArgs = ''
+        ''${gappsWrapperArgs[@]} \
+        ${extraWrapProgramArgs}
+      '';
+    };
+
+    macos = universal // {
+      outputs = universal.outputs or [ ] ++ [ "debug" ];
+
+      nativeBuildInputs = (universal.nativeBuildInputs or [ ]) ++ [
+        wrapGAppsHook3
+        cocoapods
+        xcbuild
+        (writeShellScriptBin "sw_vers" ''
+          while test $# -gt 0
+          do
+              case "$1" in
+                  -productName) echo "macOS"
+                      ;;
+                  -productVersion) echo "15.1"
+                      ;;
+                  -buildVersion) echo "24B83"
+                      ;;
+              esac
+              shift
+          done
+        '')
+      ];
+      buildInputs = (universal.buildInputs or [ ]) ++ [ apple-sdk_15 ];
+
+      dontDartBuild = true;
+      buildPhase = universal.buildPhase or ''
+        runHook preBuild
+
+        mkdir -p build/flutter_assets/fonts
+
+        flutter build macos -v --split-debug-info="$debug" $flutterBuildFlags
+
+        runHook postBuild
+      '';
+
+      dontDartInstall = true;
+      installPhase = universal.installPhase or ''
+        runHook preInstall
+
+        built=build/macos/*/$flutterMode/bundle
 
         mkdir -p $out/bin
         mkdir -p $out/app
