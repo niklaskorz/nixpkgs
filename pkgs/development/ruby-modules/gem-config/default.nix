@@ -237,6 +237,46 @@ in
     dependencies = [ "cocoapods" ];
   };
 
+  # Adapted from prometheus-client-mmap
+  commonmarker = attrs: {
+    dontBuild = false;
+
+    cargoDeps = rustPlatform.fetchCargoVendor {
+      src = stdenv.mkDerivation {
+        inherit (buildRubyGem { inherit (attrs) gemName version source; })
+          name
+          src
+          unpackPhase
+          nativeBuildInputs
+          ;
+        installPhase = ''
+          cp -R ext/commonmarker $out
+          cp Cargo.lock $out
+        '';
+      };
+      hash = "sha256-QxCN6pBLmWEZ18xYGZsX9/czNIR1CugO7BoqAGHqF0c=";
+    };
+
+    nativeBuildInputs = [
+      cargo
+      rustc
+      rustPlatform.cargoSetupHook
+      rustPlatform.bindgenHook
+    ];
+
+    disallowedReferences = [
+      rustc.unwrapped
+    ];
+
+    preInstall = ''
+      export CARGO_HOME="$PWD/../.cargo/"
+    '';
+
+    postInstall = ''
+      find $out -type f -name .rustc_info.json -delete
+    '';
+  };
+
   curb = attrs: {
     buildInputs = [ curl ];
   };
