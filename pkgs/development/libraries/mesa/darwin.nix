@@ -25,7 +25,6 @@
   zlib,
   eglPlatforms ? [
     "macos"
-    "x11"
   ],
   galliumDrivers ? [
     "llvmpipe" # software renderer
@@ -45,6 +44,7 @@
 
 let
   common = import ./common.nix { inherit lib fetchFromGitLab; };
+  withGLX = lib.elem "x11" eglPlatforms;
 in
 stdenv.mkDerivation {
   inherit (common)
@@ -90,12 +90,14 @@ stdenv.mkDerivation {
     python3Packages.python # for shebang
     spirv-llvm-translator
     spirv-tools
+    zlib
+  ]
+  ++ lib.optionals withGLX [
     libx11
     libxcb
     libxext
     libxfixes
     libxshmfence
-    zlib
   ];
 
   mesonAutoFeatures = "disabled";
@@ -115,12 +117,16 @@ stdenv.mkDerivation {
     (lib.mesonEnable "gbm" false)
     (lib.mesonBool "libgbm-external" false)
 
+    # Mesa OpenGL does not build without GLX on darwin
+    (lib.mesonBool "opengl" withGLX)
+
     # Needed for KosmicKrisp
     (lib.mesonOption "clang-libdir" "${lib.getLib llvmPackages.libclang}/lib")
     (lib.mesonEnable "llvm" true)
     (lib.mesonEnable "shared-llvm" true)
     (lib.mesonEnable "spirv-tools" true)
-
+  ]
+  ++ lib.optionals withGLX [
     # Needed for Apple GLX support
     (lib.mesonOption "glx" "dri")
   ];
