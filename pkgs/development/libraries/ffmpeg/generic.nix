@@ -138,6 +138,7 @@
   withSsh ? withHeadlessDeps, # SFTP protocol
   withSvg ? withFullDeps, # SVG protocol
   withSvtav1 ? withHeadlessDeps && !stdenv.hostPlatform.isMinGW, # AV1 encoder/decoder (focused on speed and correctness)
+  withSvtvp9 ? withHeadlessDeps,
   withTensorflow ? false, # Tensorflow dnn backend support (Increases closure size by ~390 MiB)
   withTheora ? withHeadlessDeps, # Theora encoder
   withTwolame ? withFullDeps, # MP2 encoding
@@ -340,6 +341,7 @@
   speex,
   srt,
   svt-av1,
+  svt-vp9,
   uavs3d,
   vid-stab,
   vo-amrwbenc,
@@ -496,6 +498,12 @@ stdenv.mkDerivation (
           name = "unbreak-svt-av1-3.0.0.patch";
           url = "https://git.ffmpeg.org/gitweb/ffmpeg.git/patch/d1ed5c06e3edc5f2b5f3664c80121fa55b0baa95";
           hash = "sha256-2NVkIhQVS1UQJVYuDdeH+ZvWYKVbtwW9Myu5gx7JnbA=";
+        })
+      ]
+      ++ optionals withSvtvp9 [
+        (fetchpatch2 {
+          url = "https://raw.githubusercontent.com/OpenVisualCloud/SVT-VP9/6093477117bbc2ae221916cc5176cd24d248ccf5/ffmpeg_plugin/master-0001-Add-ability-for-ffmpeg-to-run-svt-vp9.patch";
+          hash = "sha256-Uecb6WQdw1aHGXg5zlVIXiBgbt/irLCjbvSbjOIO0XI=";
         })
       ];
 
@@ -713,6 +721,7 @@ stdenv.mkDerivation (
       (enableFeature withSsh "libssh")
       (enableFeature withSvg "librsvg")
       (enableFeature withSvtav1 "libsvtav1")
+      (enableFeature withSvtvp9 "libsvtvp9")
       (enableFeature withTensorflow "libtensorflow")
       (enableFeature withTheora "libtheora")
       (enableFeature withTwolame "libtwolame")
@@ -931,6 +940,7 @@ stdenv.mkDerivation (
       ++ optionals withSsh [ libssh ]
       ++ optionals withSvg [ librsvg ]
       ++ optionals withSvtav1 [ svt-av1 ]
+      ++ optionals withSvtvp9 [ svt-vp9 ]
       ++ optionals withTensorflow [ libtensorflow ]
       ++ optionals withTheora [ libtheora ]
       ++ optionals withTwolame [ twolame ]
