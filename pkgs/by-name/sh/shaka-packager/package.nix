@@ -22,38 +22,14 @@
 
 stdenv.mkDerivation (finalAttrs: {
   pname = "shaka-packager";
-  version = "3.6.1";
+  version = "3.7.0";
 
   src = fetchFromGitHub {
-    owner = "shaka-project";
+    owner = "niklaskorz";
     repo = "shaka-packager";
-    tag = "v${finalAttrs.version}";
-    hash = "sha256-stUHCUuapUQWgmXxuejD/LXbgjB7D2oSNpDhKiYzoGw=";
+    rev = "3246010ff9ead2a555567e9172e0758dcd5c5eb2";
+    hash = "sha256-wqf0SAuUtmvyLQiLfWo0yA2aIepmRKzmvco2m6JR4j8=";
   };
-
-  patches = [
-    # By default, the git commit hash and tag are used as version
-    # and shaka-packager fails to build if these are not available.
-    # This patch makes it possible to pass an external value as version.
-    # The value itself is declared further below in `cmakeFlags`.
-    #
-    # Upstream PR: https://github.com/shaka-project/shaka-packager/pull/1552
-    ./0001-Allow-external-declaration-of-packager-version.patch
-    # Dependencies are vendored as git submodules inside shaka-packager.
-    # We want to reuse the dependencies from nixpkgs instead to avoid unnecessary
-    # build overhead and to ensure they are up to date.
-    # This patch disables the vendored dependencies (by excluding `third-party`),
-    # finds them inside the build environment and aliases them so they can be accessed
-    # without prefixing namespaces.
-    # The last step is necessary to keep the patch size to a minimum, otherwise we'd have
-    # to add the namespace identifiers everywhere a dependency is used.
-    ./0002-Unvendor-dependencies.patch
-    # shaka-packager is missing an explicit import of the VLOG_IS_ON macro header
-    # for compatibility with newer abseil versions.
-    #
-    # Upstream PR: https://github.com/shaka-project/shaka-packager/pull/1553
-    ./0003-absl-vlog.patch
-  ];
 
   nativeBuildInputs = [
     cmake
@@ -80,14 +56,11 @@ stdenv.mkDerivation (finalAttrs: {
     zlib
   ];
 
-  # shaka-packager is generally compatible to new versions of
-  # abseil-cpp, but makes use of deprecated absl functions
-  env.NIX_CFLAGS_COMPILE = "-Wno-error=deprecated-declarations";
-
   cmakeFlags = [
     "-DPACKAGER_VERSION=v${finalAttrs.version}-nixpkgs"
     # Targets are selected below in ninjaFlags
     "-DCMAKE_SKIP_INSTALL_ALL_DEPENDENCY=ON"
+    "-DUSE_SYSTEM_DEPENDENCIES=ON"
   ];
 
   ninjaFlags = [
