@@ -13,7 +13,7 @@
 
 stdenv.mkDerivation rec {
   pname = "libgovirt";
-  version = "0.3.9";
+  version = "0.3.11";
 
   outputs = [
     "out"
@@ -22,7 +22,7 @@ stdenv.mkDerivation rec {
 
   src = fetchzip {
     url = "mirror://gnome/sources/libgovirt/${lib.versions.majorMinor version}/libgovirt-${version}.tar.xz";
-    sha256 = "sha256-6RDuJTyaVYlO4Kq+niQyepom6xj1lqdBbyWL/VnZUdk=";
+    sha256 = "sha256-ao0NbWn1KXEU/3djYVAtFn2/psZxGZxS18BMJe09dDw=";
   };
 
   patches = [
