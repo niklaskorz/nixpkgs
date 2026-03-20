@@ -16,7 +16,7 @@
 
 python3.pkgs.buildPythonApplication rec {
   pname = "gtk-doc";
-  version = "1.35.1";
+  version = "1.36.0";
 
   outputDevdoc = "out";
 
@@ -27,12 +27,8 @@ python3.pkgs.buildPythonApplication rec {
     owner = "GNOME";
     repo = "gtk-doc";
     rev = version;
-    hash = "sha256-EqU7lnBnOn3gR3hT95yjdTUb3cqX2XJK5UAKsFw2Q10=";
+    hash = "sha256-zWWRVq20SaqDt9WU5C5RK/Nvt3/vizIxwxk+iYsZQbA=";
   };
-
-  patches = [
-    passthru.respect_xml_catalog_files_var_patch
-  ];
 
   postPatch = ''
     substituteInPlace meson.build \
@@ -83,8 +79,6 @@ python3.pkgs.buildPythonApplication rec {
   '';
 
   passthru = {
-    # Consumers are expected to copy the m4 files to their source tree, let them reuse the patch
-    respect_xml_catalog_files_var_patch = ./respect-xml-catalog-files-var.patch;
     updateScript = gnome.updateScript {
       packageName = "gtk-doc";
       versionPolicy = "none";
