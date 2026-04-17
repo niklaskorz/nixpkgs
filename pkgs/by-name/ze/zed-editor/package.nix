@@ -114,6 +114,9 @@ rustPlatform.buildRustPackage (finalAttrs: {
   };
 
   postPatch = ''
+    # Disable upstream's rustflags overrides to avoid linker issues
+    rm .cargo/config.toml
+
     # Dynamically link WebRTC instead of static
     substituteInPlace $cargoDepsCopy/*/webrtc-sys-*/build.rs \
       --replace-fail "cargo:rustc-link-lib=static=webrtc" "cargo:rustc-link-lib=dylib=webrtc"
