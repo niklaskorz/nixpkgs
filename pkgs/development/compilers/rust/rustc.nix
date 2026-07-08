@@ -41,6 +41,7 @@
   fastCross,
   lndir,
   makeWrapper,
+  wasm-component-ld,
 }:
 
 let
@@ -383,7 +384,9 @@ stdenv.mkDerivation (finalAttrs: {
     pkgsBuildHost.stdenv.cc
     pkg-config
   ];
-  depsBuildTarget = lib.optionals stdenv.targetPlatform.isMinGW [ bintools ];
+  depsBuildTarget =
+    lib.optionals stdenv.targetPlatform.isMinGW [ bintools ]
+    ++ lib.optionals stdenv.targetPlatform.isWasiP2 [ wasm-component-ld ];
 
   nativeBuildInputs = [
     file
