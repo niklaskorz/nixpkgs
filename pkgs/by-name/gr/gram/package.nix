@@ -25,6 +25,7 @@
   git,
   testers,
   writableTmpDirAsHomeHook,
+  pkgsCross,
 
   buildRemoteServer ? true,
 }:
@@ -186,6 +187,7 @@ rustPlatform.buildRustPackage (finalAttrs: {
         command = "${finalAttrs.remoteServerExecutableName} version";
       };
     };
+    extensions.gdscript = pkgsCross.wasm32-wasip2.callPackage ./gdscript.nix { };
   };
 
   meta = {
